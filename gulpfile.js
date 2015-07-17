@@ -3,13 +3,13 @@
 
 var gulp = require('gulp');
 var gutil = require('gulp-util');
-var del = require('del')
 
 // Add your require statements and gulp tasks here
 gulp.task('default', ['lint'], function () {
   console.log('...default called....')
 })
 
+var del = require('del')
 gulp.task('clean', function () {
   del('./js/bundle.js')
 }); 

@@ -1,7 +1,7 @@
 'use strict';
 $(function () {
 
-// require handlebars template file
+// require handlebars and fns template file
 var template = require('./template.js');
 
  // Create Twitter handle
@@ -42,9 +42,12 @@ $('header .compose button').on('click', function() {
   $.post('http://localhost:3000/tweets', {
      userId: currentUser.id,
      message: msg
+  }).done(function (newPost) {
+    $('#tweets').append(template.renderThread(currentUser, newPost.message, newPost.id))
+    // console.log(newPost)
   })
-  //refresh page so new tweet is appended with id
-  document.location.reload() 
+  //refresh page so new tweet is appended with id (not necessary)
+  // document.location.reload() 
 
   //close textarea and reset placeholder text
   $('main header form').removeClass('expand')
