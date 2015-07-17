@@ -1,100 +1,79 @@
 'use strict';
 $(function () {
- 
- // load orginal tweets (needs formatting with template and include replies) 
-  // $.get('http://localhost:3000/tweets')
-  // .done(function (data) {
-  //   $('.tweets').append(data)
-  // })
-$.getJSON('http://localhost:3000/tweets')  // .getJSON is equivalent to .get but only works woth JSON
-  .done(function (data) {     
-    data.forEach(function (tweet) {   // iterates through data (data is returned as an array of objects, so can use forEach)
-      var message = $('<div>').text(tweet.message)
-      $('#tweets').append(message) // use jQuery to append to html
-    })
-  })
-
-// Create Twitter handle
-var currentUser = {
-  handle: "@rwtaylor",
-  img:  "images/ryanBW.jpg",
-  id: 42
-};
 
 // require handlebars template file
 var template = require('./template.js');
-// console.log(template.tweetTmpl);   
 
-
-//new tweet
-function renderTweet(user, message) {
-  var userTmpl = (template.tweetTmpl)
-  
-  var theData = {
-    xyz: user,
-    messageText: message
-  }
-  // console.log(messageText)
- console.log(userTmpl(theData))
- return (userTmpl(theData))
+ // Create Twitter handle
+var currentUser = {
+  handle: "@rwtaylor",
+  img:  "ryanBW.jpg",
+  id: 42
 };
 
-//replies
-function renderCompose(){
-  var newTmpl = (template.composeTmpl)
-  console.log(newTmpl())
-  return newTmpl()
+ 
+function getTweets() {
+  return $.getJSON('http://localhost:3000/tweets') 
 }
+var tweetsFn = getTweets()
 
 
-function renderThread(user, message){ 
-  // var tweet = renderTweet(user, message) 
-  // var compose = renderCompose()
-// return ('<div class = thread >') + tweet + compose + ('</div>')
-
-  var theData = {
-    tweet: renderTweet(user, message),
-    compose: renderCompose()
-  }
-
-  
-  var thrdTmpl = (template.threadTmpl)
-
-  console.log(thrdTmpl(theData))
-  return thrdTmpl(theData)
-}
+// load orginal tweets on page load
+tweetsFn.done(function (data) {     
+    data.forEach(function (tweet) {
+      $.get('http://localhost:3000/users/' + tweet.userId)
+        .done(function (userinfo) {
+        var user = userinfo
+        // console.log(tweet.id)
+        $('#tweets').append(template.renderThread(user, tweet.message, tweet.id))
+        })
+    })
+})
+  .fail(function (xhr, error) {
+      console.log(xhr.status)
+  });   
 
 
   // new tweet button click
 $('header .compose button').on('click', function() {
-    event.preventDefault()
-    var msg = $(this).closest('.compose').find('textarea').val()
-   $('#tweets').append(renderThread(currentUser, msg))  
-    // $('#tweets').append(renderTweet(currentUser, msg))  
+  event.preventDefault()
+  var msg = $(this).closest('.compose').find('textarea').val()
 
-   console.log(renderTweet(currentUser, msg))
-
-      $.post('http://localhost:3000/tweets', {
-         userid: currentUser.id,
-         message: msg
-      })
+  $.post('http://localhost:3000/tweets', {
+     userId: currentUser.id,
+     message: msg
+  })
+  //refresh page so new tweet is appended with id
+  document.location.reload() 
 
   //close textarea and reset placeholder text
   $('main header form').removeClass('expand')
   $('.compose > textarea').val('')
-})
+});
 
-//reply Reply button click
+
+// New reply 
 $('body').on('click', '.replies .compose button', function() {
   event.preventDefault()
-  var message = $(this).closest('.compose').find('textarea').val()
-  $(this).parents('.replies').append(renderTweet(currentUser, message))
+  var msg = $(this).closest('.compose').find('textarea').val()
 
-    //close textarea and reset placeholder text
+  // get the id of the tweet 
+  var id = $(this).closest('.thread').find('.tweet').attr('id')
+  // slice off "tweet-"
+  var idNum = id.substr(6)
+  // append it
+  $(this).parents('.replies').append(template.renderTweet(currentUser, msg))
+  // post to db
+  $.post('http://localhost:3000/replies', {
+    userId: currentUser.id,
+    tweetId: idNum, // id of the tweet being responded to
+    message: msg
+  })
+
+  //close textarea and reset placeholder text
   $(this).parents('.compose').removeClass('expand')
-  $('.compose > textarea').val('')
-        
-})
+  $('.compose > textarea').val('')     
+});
 
 
 //expand "compose new tweet" textarea
@@ -102,22 +81,35 @@ $('body').on('click', '.compose > textarea', function() {
   $(this).parent().addClass('expand')
 });
 
+
 //expand thread
 $('body').on('click', '.tweet', function() {
-   $(this).parent().toggleClass('expand')
-});
+  $(this).parent().toggleClass('expand')
+})
 
 
-// for testing
-// $.get('http://localhost:3000/tweets/2/replies')
-// 	.done(function (data) {
-// 	console.log(data)
-// })
+// Get replies (if not yet posted to DOM)
+$('body').on('click', '.tweet', function() {
+  var repliesExist = $(this).closest('.thread').find('.replies .tweet').length
+  if (repliesExist == 0) {   
+    var _this = (this)
+    var id = $(this).closest('.thread').find('.tweet').attr('id')
+    var idNum = id.substr(6)
+    $.get('http://localhost:3000/tweets/' + idNum + '/replies', function (replies) {
+        replies.forEach(function (reply) {
+          // get user data for renderTweet 
+          $.get('http://localhost:3000/users/' + reply.userId)
+            .done(function (userinfo) {
+              var user = userinfo
+          $(_this).closest('.thread').find('.replies').append(template.renderTweet(user, reply.message, reply.id))
+          })
+        })
+    })
+  } else {
+    console.log('already posted replies or none to post')
+  }
+})
 
-// $.post('http://localhost:3000/users', {
-// 	id: 8,
-// 	handle: '@ryanwade',
-// })
 
 
 });
