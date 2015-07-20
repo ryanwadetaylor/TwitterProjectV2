@@ -1,10 +1,11 @@
 'use strict';
+var $ = require('jquery')
 $(function () {
 
 // require handlebars and fns template file
 var template = require('./template.js');
 
- // Create Twitter handle
+
 var currentUser = {
   handle: "@rwtaylor",
   img:  "ryanBW.jpg",
@@ -15,17 +16,17 @@ var currentUser = {
 function getTweets() {
   return $.getJSON('http://localhost:3000/tweets') 
 }
-var tweetsFn = getTweets()
+var tweets = getTweets()
 
 
 // load orginal tweets on page load
-tweetsFn.done(function (data) {     
+tweets.done(function (data) {     
     data.forEach(function (tweet) {
       $.get('http://localhost:3000/users/' + tweet.userId)
         .done(function (userinfo) {
-        var user = userinfo
-        // console.log(tweet.id)
-        $('#tweets').append(template.renderThread(user, tweet.message, tweet.id))
+          var user = userinfo
+          // console.log(tweet.id)
+          $('#tweets').append(template.renderThread(user, tweet.message, tweet.id))
         })
     })
 })
@@ -44,10 +45,8 @@ $('header .compose button').on('click', function() {
      message: msg
   }).done(function (newPost) {
     $('#tweets').append(template.renderThread(currentUser, newPost.message, newPost.id))
-    // console.log(newPost)
   })
-  //refresh page so new tweet is appended with id (not necessary)
-  // document.location.reload() 
+ 
 
   //close textarea and reset placeholder text
   $('main header form').removeClass('expand')
@@ -63,7 +62,7 @@ $('body').on('click', '.replies .compose button', function() {
   // get the id of the tweet 
   var id = $(this).closest('.thread').find('.tweet').attr('id')
   // slice off "tweet-"
-  var idNum = id.substr(6)
+  var idNum = id.split('-')[1]
   // append it
   $(this).parents('.replies').append(template.renderTweet(currentUser, msg))
   // post to db
@@ -94,8 +93,8 @@ $('body').on('click', '.tweet', function() {
 // Get replies (if not yet posted to DOM)
 $('body').on('click', '.tweet', function() {
   var repliesExist = $(this).closest('.thread').find('.replies .tweet').length
-  if (repliesExist == 0) {   
-    var _this = (this)
+  if (repliesExist === 0) {   
+    var _this = this
     var id = $(this).closest('.thread').find('.tweet').attr('id')
     var idNum = id.substr(6)
     $.get('http://localhost:3000/tweets/' + idNum + '/replies', function (replies) {
@@ -104,7 +103,7 @@ $('body').on('click', '.tweet', function() {
           $.get('http://localhost:3000/users/' + reply.userId)
             .done(function (userinfo) {
               var user = userinfo
-          $(_this).closest('.thread').find('.replies').append(template.renderTweet(user, reply.message, reply.id))
+              $(_this).closest('.thread').find('.replies').append(template.renderTweet(user, reply.message, reply.id))
           })
         })
     })

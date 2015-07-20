@@ -12,39 +12,28 @@ function renderTweet(user, message, tweetid) {
   var userTmpl = (tweetTmpl)
   
   var theData = {
-    xyz: user,
+    user: user,
     messageText: message,
     tweetid: tweetid
   }
- return (userTmpl(theData))
-};
-
-
-//replies
-function renderCompose(){
-  var newTmpl = (composeTmpl)
-  // console.log(newTmpl())
-  return newTmpl()
-};
+ return userTmpl(theData)
+}
 
 
 function renderThread(user, message, tweetid){ 
   var theData = {
     tweet: renderTweet(user, message, tweetid),
-    compose: renderCompose()
+    compose: composeTmpl
   }
-  var thrdTmpl = (threadTmpl)
-  // console.log(thrdTmpl(theData))
+  var thrdTmpl = threadTmpl
   return thrdTmpl(theData)
-};
+}
 
 
 module.exports = {
 	tweetTmpl: tweetTmpl,
 	threadTmpl: threadTmpl,
-	composeTmpl: composeTmpl,
 	renderTweet: renderTweet,
-	renderCompose: renderCompose,
 	renderThread: renderThread
 }
 

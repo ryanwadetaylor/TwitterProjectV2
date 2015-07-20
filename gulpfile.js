@@ -5,21 +5,19 @@ var gulp = require('gulp');
 var gutil = require('gulp-util');
 
 // Add your require statements and gulp tasks here
-gulp.task('default', ['lint'], function () {
-  console.log('...default called....')
-})
+gulp.task('default', ['lint'])
 
 var del = require('del')
-gulp.task('clean', function () {
-  del('./js/bundle.js')
+gulp.task('clean', function (cb) {
+  del('./js/bundle.js', cb)
 }); 
 
 
 var jshint = require('gulp-jshint')
 gulp.task('lint', function () {
-  return gulp.src('./js/*.js')
-  .pipe(jshint())
-  .pipe(jshint.reporter('default'))
+  return gulp.src(['./js/*.js', '!./js/bundle.js'])
+    .pipe(jshint())
+    .pipe(jshint.reporter('default'))
 });
 
 //
